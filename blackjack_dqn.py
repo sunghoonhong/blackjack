@@ -13,7 +13,8 @@ from blackjack import BlackJack
 class Agent:
     def __init__(self, state_size, action_size):
         self.render = False
-        self.load_model = False
+        self.load_model = True
+        # self.load_model = False
 
         # 상태 & 행동 크기 정의
         self.state_size = state_size
@@ -154,7 +155,7 @@ if __name__ == '__main__' :
     plt.plot([e for e in range(EPISODES)], ratios)
     plt.show()
     plt.savefig('result.png')
-    agent.model.save_weights('./weight.h5')
+    agent.model.save_weights('./save_model/blackjack_dqn_trained.h5')
     file = open('ratio.csv', 'w+', newline='')
     wr = csv.writer(file)
     for e in range(EPISODES):
