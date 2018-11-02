@@ -70,7 +70,9 @@ class Player:
         1. score ( not including ace )
         2. ace: the number of aces
         (deprecated) 3. counted: cards that the player counted
-        3. bust probability:
+        3. dealer's score
+        4. dealer has ace
+        5. bust probability:
         '''
         score = self.score  # score는 최대 22
         ace = self.ace  # ace를 가지고 있는지
@@ -86,8 +88,9 @@ class Player:
                 rank = int(card.rank)
             if rank + score > 21:
                 bust += 1
+
         bust_prob = bust / len(unknown) if len(unknown) else 0.5
-        self.state = score, ace, bust_prob
+        self.state = score, ace, game.dealer.score, game.dealer.ace, bust_prob
 
 class Agent(Player):
 
@@ -183,7 +186,7 @@ class Game:
 class BlackJack(gym.Env):
 
     def __init__(self):
-        self.observation_space = spaces.Box(np.array([0,0,0.0]), np.array([22, 1, 1.0]))
+        self.observation_space = spaces.Box(np.array([0,0,0,0,0.0]), np.array([22, 1, 22, 1, 1.0]))
         self.action_space = spaces.Discrete(2)
         self.game = Game(Agent(), Dealer(), Deck())
 

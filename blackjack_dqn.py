@@ -13,8 +13,8 @@ from blackjack import BlackJack
 class Agent:
     def __init__(self, state_size, action_size):
         self.render = False
-        self.load_model = True
-        # self.load_model = False
+        # self.load_model = True
+        self.load_model = False
 
         # 상태 & 행동 크기 정의
         self.state_size = state_size
@@ -106,7 +106,7 @@ if __name__ == '__main__' :
     agent = Agent(state_size, action_size)
 
     ratios = []
-    EPISODES = 100
+    EPISODES = 200
     SUBEPISODES = 100
     for e in range(EPISODES):
         scores, episodes = [], []
@@ -152,6 +152,7 @@ if __name__ == '__main__' :
         # print(e, scores.count(1), scores.count(0), scores.count(-1))
         ratios.append(scores.count(1)/(scores.count(1)+scores.count(-1))*100)
 
+    print('Best ratio:', max(ratios))
     plt.plot([e for e in range(EPISODES)], ratios)
     plt.show()
     plt.savefig('result.png')
@@ -160,4 +161,3 @@ if __name__ == '__main__' :
     wr = csv.writer(file)
     for e in range(EPISODES):
         wr.writerow([e, ratios[e]])
-    print(max(ratios))
