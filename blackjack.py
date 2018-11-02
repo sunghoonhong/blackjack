@@ -80,17 +80,21 @@ class Player:
         unknown = list(set(game.deck.base()) - set(counted))
         bust = 0
         for card in unknown:    # rank 개수로 해야할까
-            if card.rank == 'A':
-                rank = 1
-            elif card.rank in ['J', 'Q', 'K']:
-                rank = 10
-            else:
-                rank = int(card.rank)
-            if rank + score > 21:
+            if card.rankNum() + score > 21:
                 bust += 1
 
         bust_prob = bust / len(unknown) if len(unknown) else 0.5
-        self.state = score, ace, game.dealer.score, game.dealer.ace, bust_prob
+        if not game.dealer.hidden:
+            known_dealer_score = 0
+            known_dealer_ace = 0
+        else:
+            known_dealer_score = game.dealer.score - game.dealer.hidden.rankNum()
+            if game.dealer.hidden.rank =='A' and not 'A' in [card.rank for card in game.dealer.hand]:
+                known_dealer_ace = 0
+            else:
+                known_dealer_ace = 1
+
+        self.state = score, ace, known_dealer_score, known_dealer_ace, bust_prob
 
 class Agent(Player):
 
@@ -128,15 +132,25 @@ class Card:
         rank = Card.ranks.index(self.rank)
         return suit*1000 + rank
 
+    def rankNum(self):
+        if self.rank == 'A':
+            rank = 1
+        elif self.rank in ['J', 'Q', 'K']:
+            rank = 10
+        else:
+            rank = int(self.rank)
+        return rank
+
     suits = ['club', 'diamond', 'heart', 'spade']
     ranks = ['A'] + [str(i) for i in range(2, 11)] + ['J', 'Q', 'K']
 
 
 class Deck:
 
-    def __init__(self):
+    def __init__(self, shuffle=True):
         self.cards = self.base()
-        random.shuffle(self.cards)
+        if shuffle:
+            random.shuffle(self.cards)
 
     def count(self):
         return len(self.cards)

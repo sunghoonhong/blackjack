@@ -1,9 +1,13 @@
+''''
+This Blackjack is modified version.
+Card should be drawed
+'''
+
 import sys
 import random
 import csv
 import numpy as np
 from collections import deque
-import pylab
 import matplotlib.pyplot as plt
 from keras.layers import Dense
 from keras.models import Sequential
@@ -11,7 +15,11 @@ from keras.optimizers import Adam
 from blackjack import BlackJack
 
 class Agent:
-    def __init__(self, state_size, action_size):
+    
+    def __init__(self, state_size, action_size,
+                 discount_factor=0.99, learning_rate=0.001,
+                 epsilon=1.0, epsilon_decay=0.999, epsilon_min=0.01,
+                 batch_size=64, train_start=1000):
         self.render = False
         # self.load_model = True
         self.load_model = False
@@ -21,13 +29,13 @@ class Agent:
         self.action_size = action_size
 
         # hyper parameter
-        self.discount_factor = 0.99
-        self.learning_rate = 0.001
-        self.epsilon = 1.0
-        self.epsilon_decay = 0.999
-        self.epsilon_min = 0.01
-        self.batch_size = 64
-        self.train_start = 1000
+        self.discount_factor = discount_factor
+        self.learning_rate = learning_rate
+        self.epsilon = epsilon
+        self.epsilon_decay = epsilon_decay
+        self.epsilon_min = epsilon_min
+        self.batch_size = batch_size
+        self.train_start = train_start
 
         # replay memory
         self.memory = deque(maxlen=2000)
@@ -96,17 +104,10 @@ class Agent:
         self.model.fit(states, target, batch_size=self.batch_size, epochs=1, verbose=0)
 
 
-if __name__ == '__main__' :
-    env = BlackJack()    # 여기에 환경을 넣자
-
-    state_size = env.observation_space.shape[0]
-    action_size = env.action_space.n
-
-    # DQN agent
-    agent = Agent(state_size, action_size)
+def learn_agent(env, agent):
 
     ratios = []
-    EPISODES = 200
+    EPISODES = 50
     SUBEPISODES = 100
     for e in range(EPISODES):
         scores, episodes = [], []
@@ -114,9 +115,6 @@ if __name__ == '__main__' :
             done = False
             score = 0
             # reset env
-            # if env.game.deck.count() < 4:
-            #     state = env.reset()
-            # else:
             state = env.reset(deck=env.game.deck)
             state = np.reshape(state, [1, state_size])
 
@@ -144,20 +142,39 @@ if __name__ == '__main__' :
                 if done:
                     agent.update_target_model()
                     scores.append(score)
-                    # print('episode:', e,
-                    #       'score:', score,
-                    #       'memory length:', len(agent.memory),
-                    #       'epsilon:', agent.epsilon)
-                    # print('info', info)
-        # print(e, scores.count(1), scores.count(0), scores.count(-1))
         ratios.append(scores.count(1)/(scores.count(1)+scores.count(-1))*100)
 
-    print('Best ratio:', max(ratios))
-    plt.plot([e for e in range(EPISODES)], ratios)
-    plt.show()
-    plt.savefig('result.png')
-    agent.model.save_weights('./save_model/blackjack_dqn_trained.h5')
-    file = open('ratio.csv', 'w+', newline='')
-    wr = csv.writer(file)
-    for e in range(EPISODES):
-        wr.writerow([e, ratios[e]])
+    mean = np.mean(ratios)
+    best = max(ratios)
+    return mean, best
+
+
+
+if __name__ == '__main__' :
+    env = BlackJack()    # 여기에 환경을 넣자
+
+    state_size = env.observation_space.shape[0]
+    action_size = env.action_space.n
+
+    results = []
+    parameters = []
+    for i in range(30):
+        discount = random.uniform(0.9, 0.9999)
+        learn_rate = random.uniform(0.00001, 0.1)
+        # DQN agent
+        agent = Agent(state_size, action_size, discount_factor=discount, learning_rate=learn_rate)
+        results.append(learn_agent(env, agent))
+        parameters.append((discount, learn_rate))
+
+    for i in range(10):
+        print(results[i], parameters[i])
+
+    # print('Best ratio:', max(ratios))
+    # plt.plot([e for e in range(EPISODES)], ratios)
+    # plt.show()
+    # plt.savefig('result.png')
+    # agent.model.save_weights('./save_model/blackjack_dqn_trained.h5')
+    # file = open('ratio.csv', 'w+', newline='')
+    # wr = csv.writer(file)
+    # for e in range(EPISODES):
+    #     wr.writerow([e, ratios[e]])
